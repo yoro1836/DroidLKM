@@ -1,0 +1,88 @@
+--- a/scheds/rust/scx_lavd/src/bpf/intf.h
++++ b/scheds/rust/scx_lavd/src/bpf/intf.h
+@@ -48,9 +48,19 @@
+  * common constants
+  */
+ enum {
+-	LAVD_CPU_ID_MAX			= 512,
++	/*
++	 * scx61: 64, not 512. lavd_init() walks every possible CPU id of every
++	 * domain, which a verifier before v6.4 counts branch by branch and
++	 * gave up on. A phone has a dozen CPUs; the loader refuses more.
++	 */
++	LAVD_CPU_ID_MAX			= 64,
+ 
+-	LAVD_CPDOM_MAX_NR		= 32, /* maximum number of compute domain */
++	/*
++	 * scx61: 8, not 32. lavd_dispatch() loops over this many domains per
++	 * distance, which a verifier before v6.4 walks round by round and gave
++	 * up on. A phone has four or fewer; the loader refuses more.
++	 */
++	LAVD_CPDOM_MAX_NR		= 8, /* maximum number of compute domain */
+ 	LAVD_CPDOM_MAX_DIST		= 4,  /* maximum distance from one compute domain to another */
+ 
+ 	LAVD_STATUS_STR_LEN		= 4, /* {LR: Latency-critical, Regular}
+--- a/scheds/rust/scx_lavd/src/bpf/introspec.bpf.c
++++ b/scheds/rust/scx_lavd/src/bpf/introspec.bpf.c
+@@ -63,9 +63,16 @@
+ 	u64 cur_nr, prev_nr;
+ 	u32 cpu_id;
+ 	int i;
++	char comm[8];
+ 
+-	/* do not introspect itself */
+-	if (bpf_strncmp(p->comm, 8, "scx_lavd") == 0)
++	/*
++	 * do not introspect itself
++	 *
++	 * scx61: helpers take a task's fields as memory from v6.2 on, so the
++	 * name is copied to the stack first.
++	 */
++	__builtin_memcpy(comm, p->comm, sizeof(comm));
++	if (bpf_strncmp(comm, 8, "scx_lavd") == 0)
+ 		return;
+ 
+ 	/* introspec_arg is the number of schedules remaining */
+--- a/scheds/rust/scx_lavd/src/bpf/util.bpf.c
++++ b/scheds/rust/scx_lavd/src/bpf/util.bpf.c
+@@ -257,17 +257,33 @@
+ 	return (stat_cur->nr_active + LAVD_CC_NR_OVRFLW) >= nr_cpus_onln;
+ }
+ 
++/*
++ * scx61: the same answer as scanning from bit nuance % 64 upwards, without
++ * the loop. Kernels before v6.4 verify a 64-round bpf_for() round by round,
++ * which put lavd_dispatch() past their limit of a million instructions.
++ * Rotate the bitmap so the scan starts at bit 0, then count the zeroes below
++ * the lowest set bit. barrier_var() keeps clang from turning this into
++ * rotate and popcount, which its BPF backend cannot emit.
++ */
+ static u64 pick_any_bit(u64 bitmap, u64 nuance)
+ {
+-	u64 i, pos;
++	u64 n = nuance % 64, v;
+ 
+-	bpf_for(i, 0, 64) {
+-		pos = (i + nuance) % 64;
+-		if (bitmap & (1LLU << pos))
+-			return pos;
+-	}
++	if (!bitmap)
++		return -ENOENT;
+ 
+-	return -ENOENT;
++	v = bitmap >> n;
++	barrier_var(v);
++	v |= bitmap << ((64 - n) & 63);
++	v = (v & -v) - 1;
++	barrier_var(v);
++	v = v - ((v >> 1) & 0x5555555555555555ULL);
++	v = (v & 0x3333333333333333ULL) + ((v >> 2) & 0x3333333333333333ULL);
++	v = (v + (v >> 4)) & 0x0f0f0f0f0f0f0f0fULL;
++	barrier_var(v);
++	v = (v * 0x0101010101010101ULL) >> 56;
++
++	return (v + n) % 64;
+ }
+ 
+ static void set_on_core_type(struct task_ctx *taskc,
