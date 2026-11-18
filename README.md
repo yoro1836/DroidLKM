@@ -53,10 +53,18 @@ SCX61_ARM64=<arm64 정적 라이브러리> SCX61_FOR_MAX=16 SCX61_INLINE=100000 
 받은 libbpf-sys에 `libbpf-sys-1.4.6.patch`를, 스케줄러에 `NAME-*.patch`를 한 번씩 적용한다.
 C 스케줄러용 libbpf에는 `libbpf-android14-6.1.patch`를 먼저 적용해 둔다.
 
-VM 테스트는 GKI android14-6.1 커널 이미지를 `out/gki/android14-6.1/Image`에 두고
-`tests/vm/Dockerfile.cross`로 `droidspaces-lkm-vm-cross:local` 이미지를 만든 뒤
-`tests/vm/run-scx.sh`로 돌린다. KVM이 없으면 몇 분 걸린다. `DS_SCX_TRY=scx_lavd`로 스케줄러
-하나만 돌릴 수 있다.
+VM 테스트 (QEMU arm64, KVM 없이 돈다):
+
+```
+python3 scripts/build-gki.py 6.1                 # out/gki/android14-6.1-scx/droidspaces_scx.ko
+sh scripts/prepare-vm-kernel.sh                  # out/gki/android14-6.1/Image, DDK 이미지에서
+docker build -t droidspaces-lkm-vm-cross:local -f tests/vm/Dockerfile.cross tests/vm
+mkdir -p out/scx/upstream && cp <스케줄러 바이너리> out/scx/upstream/   # scx_simple 필수
+tests/vm/run-scx.sh                              # DS_SCX_TRY=scx_lavd 로 하나만
+```
+
+스케줄러 바이너리는 위 빌드로 만들거나 폰용 묶음에 든 것을 그대로 쓴다. 에뮬레이션이라 몇
+분 걸린다.
 
 ## 폰에서 돌리기
 
