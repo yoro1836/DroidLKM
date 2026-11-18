@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Registration of the hook tables in hooks.h. */
-#define pr_fmt(fmt) "droidspaces_scx: " fmt
+#define pr_fmt(fmt) "droid-scx: " fmt
 #include <linux/module.h>
 #include <linux/kprobes.h>
 #include "hooks.h"

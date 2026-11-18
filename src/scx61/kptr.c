@@ -21,7 +21,7 @@
  *   through call_rcu, so the object is there for as long as the program
  *   can hold the pointer. The verifier no longer checks that, though.
  */
-#define pr_fmt(fmt) "droidspaces_scx: " fmt
+#define pr_fmt(fmt) "droid-scx: " fmt
 #include <linux/module.h>
 #include <linux/bpf.h>
 #include <linux/bpf_verifier.h>

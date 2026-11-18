@@ -4,7 +4,7 @@
  * /sys/kernel/btf/vmlinux, and can that module register kfuncs for struct_ops
  * and tracing programs. Loads, reports and can be removed again.
  */
-#define pr_fmt(fmt) "droidspaces_btfprobe: " fmt
+#define pr_fmt(fmt) "droid-btfprobe: " fmt
 #include <linux/module.h>
 #include <linux/btf.h>
 #include <linux/btf_ids.h>

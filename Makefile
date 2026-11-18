@@ -2,13 +2,13 @@ ifneq ($(KERNELRELEASE),)
 include $(src)/vendor/kallrecon/deps.mk
 SCX_DIR ?= src/scx61
 ifeq ($(TARGET),btfprobe)
-obj-m := droidspaces_btfprobe.o
-droidspaces_btfprobe-y := $(SCX_DIR)/btfprobe.o
+obj-m := droid-btfprobe.o
+droid-btfprobe-y := $(SCX_DIR)/btfprobe.o
 else
 # Upstream's kernel/sched/ext.c (src/scx61/upstream, through
 # scripts/gen-scx61.py) with its android14-6.1 glue.
-obj-m := droidspaces_scx.o
-droidspaces_scx-y := $(SCX_DIR)/main.o $(SCX_DIR)/ext-port.o $(SCX_DIR)/cpumask-port.o \
+obj-m := droid-scx.o
+droid-scx-y := $(SCX_DIR)/main.o $(SCX_DIR)/ext-port.o $(SCX_DIR)/cpumask-port.o \
 	$(SCX_DIR)/task-kfuncs.o $(SCX_DIR)/bpf-fixes.o $(SCX_DIR)/kptr.o $(SCX_DIR)/btf.o \
 	$(SCX_DIR)/hooks.o \
 	$(addprefix vendor/kallrecon/,$(DEPS_LIB_OBJS))

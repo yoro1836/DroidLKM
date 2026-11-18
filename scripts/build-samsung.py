@@ -29,8 +29,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = json.loads((ROOT / 'build/gki-targets.json').read_text())
 MODULES = {
-    'scx': ('scx_source', 'TARGET=scx', 'SCX_DIR', 'droidspaces_scx.ko'),
-    'btfprobe': ('scx_source', 'TARGET=btfprobe', 'SCX_DIR', 'droidspaces_btfprobe.ko'),
+    'scx': ('scx_source', 'TARGET=scx', 'SCX_DIR', 'droid-scx.ko'),
+    'btfprobe': ('scx_source', 'TARGET=btfprobe', 'SCX_DIR', 'droid-btfprobe.ko'),
 }
 
 

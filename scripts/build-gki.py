@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build droidspaces_scx.ko for a GKI family with its pinned DDK image."""
+"""Build droid-scx.ko for a GKI family with its pinned DDK image."""
 import argparse
 import hashlib
 import json
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     key = 'scx_source'
     if not (ROOT / target[key] / 'main.c').is_file():
         parser.error(f'missing source set: {target[key]}')
-    outname, ko, make = target['kmi']+'-scx', 'droidspaces_scx.ko', ['TARGET=scx', f'SCX_DIR={target[key]}']
+    outname, ko, make = target['kmi']+'-scx', 'droid-scx.ko', ['TARGET=scx', f'SCX_DIR={target[key]}']
     cmd = ['docker', 'run', '--rm', '--platform', 'linux/amd64',
            '-v', f'{ROOT}:/module', '-w', '/module', target['image'],
            'make', *make,

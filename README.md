@@ -56,7 +56,7 @@ C 스케줄러용 libbpf에는 `libbpf-android14-6.1.patch`를 먼저 적용해 
 VM 테스트 (QEMU arm64, KVM 없이 돈다):
 
 ```
-python3 scripts/build-gki.py 6.1                 # out/gki/android14-6.1-scx/droidspaces_scx.ko
+python3 scripts/build-gki.py 6.1                 # out/gki/android14-6.1-scx/droid-scx.ko
 sh scripts/prepare-vm-kernel.sh                  # out/gki/android14-6.1/Image, DDK 이미지에서
 docker build -t droidspaces-lkm-vm-cross:local -f tests/vm/Dockerfile.cross tests/vm
 mkdir -p out/scx/upstream && cp <스케줄러 바이너리> out/scx/upstream/   # scx_simple 필수

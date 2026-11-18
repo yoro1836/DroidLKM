@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/* Runs an unmodified sched_ext scheduler binary against droidspaces_scx:
+/* Runs an unmodified sched_ext scheduler binary against droid-scx:
  *
  *   scx-run scx_simple [args]
  *
@@ -91,10 +91,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "usage: %s scheduler [args]\n", argv[0]);
 		return 2;
 	}
-	if (copy("/sys/module/droidspaces_scx/btf", merged))
+	if (copy("/sys/module/droid_scx/btf", merged))
 		merged = "/scx-merged.btf";
 	if (unshare(CLONE_NEWNS) || mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL) ||
-	    copy("/sys/module/droidspaces_scx/btf", merged) ||
+	    copy("/sys/module/droid_scx/btf", merged) ||
 	    mount(merged, "/sys/kernel/btf/vmlinux", NULL, MS_BIND, NULL)) {
 		perror("scx-run: merged BTF");
 		return 1;

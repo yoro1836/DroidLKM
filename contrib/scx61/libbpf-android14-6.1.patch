@@ -49,7 +49,7 @@ index 02e75b1..3f946d7 100644
  	if (obj->btf_modules_loaded)
  		return 0;
  
-+	/* android14-6.1 with droidspaces_scx: the vmlinux BTF this process
++	/* android14-6.1 with droid-scx: the vmlinux BTF this process
 +	 * sees is the module's merged image, which is longer than the one the
 +	 * device's other modules were built on, so their split BTF does not
 +	 * parse on top of it. Everything a scheduler needs is in the merged

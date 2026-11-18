@@ -4,10 +4,10 @@
 here=$(cd "$(dirname "$0")" && pwd)
 t=/data/local/tmp/scx
 mkdir -p $t && cp "$here"/* $t/ && chmod 755 $t/scx-run $t/scx_*
-if [ ! -d /sys/module/droidspaces_scx ]; then
-    /data/adb/ksud insmod $t/droidspaces_scx.ko gki=1 || { dmesg | grep droidspaces_scx | tail -5; exit 1; }
+if [ ! -d /sys/module/droid_scx ]; then
+    /data/adb/ksud insmod $t/droid-scx.ko gki=1 || { dmesg | grep droid-scx | tail -5; exit 1; }
 fi
-dmesg | grep droidspaces_scx | tail -3
+dmesg | grep droid-scx | tail -3
 for s in scx_simple scx_bpfland scx_lavd; do
     echo "-- $s 시작"; log="$here/$s.log"
     args=; [ $s = scx_simple ] || args=-v

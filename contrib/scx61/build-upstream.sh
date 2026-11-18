@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build one of the kernel tree's tools/sched_ext schedulers, unmodified, as a
-# static arm64 binary for droidspaces_scx.
+# static arm64 binary for droid-scx.
 #
 #   build-upstream.sh SCX_REPO LIBBPF_REPO SCHED_DIR NAME OUT_DIR
 #

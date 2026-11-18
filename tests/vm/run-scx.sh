@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run only in QEMU: load droidspaces_scx.ko into the android14-6.1 GKI kernel
+# Run only in QEMU: load droid-scx.ko into the android14-6.1 GKI kernel
 # and run upstream's scx_simple on it (contrib/scx61/build-upstream.sh builds
 # that first). Uses the image from Dockerfile.cross, so the host needs no
 # arm64 binfmt handler.
@@ -16,7 +16,7 @@ rm -f "$root/$log_dir/console.log"
 docker ps >/dev/null
 docker run --rm --platform linux/amd64 -v "$root:/work" \
     -e KERNEL="${DS_SCX_KERNEL:-/work/out/gki/android14-6.1/Image}" \
-    -e MODULE="${DS_SCX_MODULE:-/work/out/gki/android14-6.1-scx/droidspaces_scx.ko}" \
+    -e MODULE="${DS_SCX_MODULE:-/work/out/gki/android14-6.1-scx/droid-scx.ko}" \
     -e LOG="/work/$log_dir/console.log" -e TRY="${DS_SCX_TRY:-}" \
     -e PACK="${DS_SCX_PACK:+/work/$DS_SCX_PACK}" \
     droidspaces-lkm-vm-cross:local sh -eu -c '

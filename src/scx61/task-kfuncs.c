@@ -4,7 +4,7 @@
  * and helpers.c is not something to bring in whole, so they are written out
  * here after 6.12's.
  */
-#define pr_fmt(fmt) "droidspaces_scx: " fmt
+#define pr_fmt(fmt) "droid-scx: " fmt
 #include <linux/module.h>
 #include <linux/bpf.h>
 #include <linux/sched.h>

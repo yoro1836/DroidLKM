@@ -3,7 +3,7 @@
  * kfuncs do not exist yet (v6.3). The code is in cpumask-gen.c, generated
  * from upstream/cpumask.c.
  */
-#define pr_fmt(fmt) "droidspaces_scx: " fmt
+#define pr_fmt(fmt) "droid-scx: " fmt
 #include <linux/module.h>
 #include <linux/bpf.h>
 #include <linux/bpf_mem_alloc.h>

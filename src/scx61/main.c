@@ -11,7 +11,7 @@
  * that move the PC to the glue, so nothing writes kernel memory and the same
  * module works under Samsung EL2.
  */
-#define pr_fmt(fmt) "droidspaces_scx: " fmt
+#define pr_fmt(fmt) "droid-scx: " fmt
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/utsname.h>

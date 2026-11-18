@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build one of the Rust schedulers of github.com/sched-ext/scx, unmodified, as
-# a static arm64 binary for droidspaces_scx.
+# a static arm64 binary for droid-scx.
 #
 #   build-rust.sh SCX_REPO NAME OUT_DIR
 #
