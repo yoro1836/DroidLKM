@@ -66,6 +66,14 @@ tests/vm/run-scx.sh                              # DS_SCX_TRY=scx_lavd 로 하�
 스케줄러 바이너리는 위 빌드로 만들거나 폰용 묶음에 든 것을 그대로 쓴다. 에뮬레이션이라 몇
 분 걸린다.
 
+Docker가 없는 머신에서는 QEMU만 있으면 된다. Docker가 있는 쪽에서 initramfs를 만들어 커널
+이미지와 같이 옮긴 다음 돌린다:
+
+```
+DS_SCX_PACK=out/scx/initramfs tests/vm/run-scx.sh            # Docker 있는 쪽
+tests/vm/run-scx-qemu.sh Image initramfs [scx_lavd]          # QEMU만 있는 쪽
+```
+
 ## 폰에서 돌리기
 
 `contrib/scx61/phone/run.sh`와 모듈, `scx-run`, 스케줄러 바이너리를 한 디렉터리에 두고:

@@ -9,6 +9,8 @@ log_dir=${DS_SCX_LOG_DIR:-out/scx/vm}
 case "$log_dir" in out/*) ;; *) exit 2;; esac
 case "$log_dir" in *..*) exit 2;; esac
 mkdir -p "$root/$log_dir"
+case "${DS_SCX_PACK:-out/}" in out/*) ;; *) exit 2;; esac
+case "${DS_SCX_PACK:-}" in *..*) exit 2;; esac
 # A stale log from an earlier run must not pass for this one.
 rm -f "$root/$log_dir/console.log"
 docker ps >/dev/null
@@ -16,6 +18,7 @@ docker run --rm --platform linux/amd64 -v "$root:/work" \
     -e KERNEL="${DS_SCX_KERNEL:-/work/out/gki/android14-6.1/Image}" \
     -e MODULE="${DS_SCX_MODULE:-/work/out/gki/android14-6.1-scx/droidspaces_scx.ko}" \
     -e LOG="/work/$log_dir/console.log" -e TRY="${DS_SCX_TRY:-}" \
+    -e PACK="${DS_SCX_PACK:+/work/$DS_SCX_PACK}" \
     droidspaces-lkm-vm-cross:local sh -eu -c '
     test -r "$KERNEL" && test -r "$MODULE"
     mkdir -p /tmp/root/bin /tmp/root/dev /tmp/root/proc /tmp/root/sys
@@ -35,11 +38,15 @@ docker run --rm --platform linux/amd64 -v "$root:/work" \
     mknod /tmp/root/dev/null c 1 3
     cd /tmp/root
     find . -print0 | cpio --null -o -H newc >/tmp/initramfs
+    # DS_SCX_PACK=out/...: stop here and keep the initramfs, for
+    # run-scx-qemu.sh on a host without Docker.
+    if [ -n "$PACK" ]; then cp /tmp/initramfs "$PACK"; exit 0; fi
     timeout 600 qemu-system-aarch64 -machine virt -cpu max -m 1024 -smp 2 \
         -nographic -monitor none -nic none -no-reboot -kernel "$KERNEL" \
         -initrd /tmp/initramfs \
         -append "console=ttyAMA0 rdinit=/init nokaslr selinux=0 panic=-1 ${TRY:+scx_try=$TRY}" >"$LOG" 2>&1
     ' || true
+if [ -n "${DS_SCX_PACK:-}" ]; then ls -l "$root/$DS_SCX_PACK"; exit 0; fi
 log="$root/$log_dir/console.log"
 grep -aE "^(SCX|PORT|TRY|state=|attaches=|kfunc_errors=|DS_SCX|libbpf)" "$log" || true
 if ! grep -q "^DS_SCX_VM_RESULT=0" "$log" ||
