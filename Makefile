@@ -10,6 +10,7 @@ else
 obj-m := droidspaces_scx.o
 droidspaces_scx-y := $(SCX_DIR)/main.o $(SCX_DIR)/ext-port.o $(SCX_DIR)/cpumask-port.o \
 	$(SCX_DIR)/task-kfuncs.o $(SCX_DIR)/bpf-fixes.o $(SCX_DIR)/kptr.o $(SCX_DIR)/btf.o \
+	$(SCX_DIR)/hooks.o \
 	$(addprefix vendor/kallrecon/,$(DEPS_LIB_OBJS))
 endif
 ifneq ($(GKI_ANDROID),)
