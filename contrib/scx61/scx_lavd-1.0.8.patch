@@ -1,6 +1,35 @@
+--- a/scheds/rust/scx_lavd/src/main.rs
++++ b/scheds/rust/scx_lavd/src/main.rs
+@@ -336,7 +336,23 @@
+         avg_freq /= cpu_fids.len() as usize;
+ 
+         // Initialize cpu capacity
+-        if base_freq > 0 {
++        //
++        // scx61: the kernel's own capacity when it has one. A capacity from
++        // the top frequency leaves out how much a core does per clock: on an
++        // Exynos 2400 it put an A520 at 625 where the kernel has 253, and core
++        // compaction then crowded the little cores.
++        let sysfs_cap = |cpu: usize| -> Option<usize> {
++            std::fs::read_to_string(format!("/sys/devices/system/cpu/cpu{}/cpu_capacity", cpu))
++                .ok()?
++                .trim()
++                .parse()
++                .ok()
++        };
++        if cpu_fids.iter().all(|c| sysfs_cap(c.cpu_id).is_some()) {
++            for cpu_fid in cpu_fids.iter_mut() {
++                cpu_fid.cpu_cap = sysfs_cap(cpu_fid.cpu_id).unwrap();
++            }
++        } else if base_freq > 0 {
+             for cpu_fid in cpu_fids.iter_mut() {
+                 cpu_fid.cpu_cap = ((cpu_fid.max_freq * 1024) / base_freq) as usize;
+             }
+diff --git a/scheds/rust/scx_lavd/src/bpf/intf.h b/scheds/rust/scx_lavd/src/bpf/intf.h
+index 0af4188..84def40 100644
 --- a/scheds/rust/scx_lavd/src/bpf/intf.h
 +++ b/scheds/rust/scx_lavd/src/bpf/intf.h
-@@ -48,9 +48,19 @@
+@@ -48,9 +48,19 @@ extern void bpf_iter_task_destroy(struct bpf_iter_task *it) __weak __ksym;
   * common constants
   */
  enum {
@@ -22,9 +51,11 @@
  	LAVD_CPDOM_MAX_DIST		= 4,  /* maximum distance from one compute domain to another */
  
  	LAVD_STATUS_STR_LEN		= 4, /* {LR: Latency-critical, Regular}
+diff --git a/scheds/rust/scx_lavd/src/bpf/introspec.bpf.c b/scheds/rust/scx_lavd/src/bpf/introspec.bpf.c
+index 388395d..f2d6af6 100644
 --- a/scheds/rust/scx_lavd/src/bpf/introspec.bpf.c
 +++ b/scheds/rust/scx_lavd/src/bpf/introspec.bpf.c
-@@ -63,9 +63,16 @@
+@@ -63,9 +63,16 @@ static void proc_introspec_sched_n(struct task_struct *p,
  	u64 cur_nr, prev_nr;
  	u32 cpu_id;
  	int i;
@@ -43,9 +74,11 @@
  		return;
  
  	/* introspec_arg is the number of schedules remaining */
+diff --git a/scheds/rust/scx_lavd/src/bpf/util.bpf.c b/scheds/rust/scx_lavd/src/bpf/util.bpf.c
+index f25b967..f3e6672 100644
 --- a/scheds/rust/scx_lavd/src/bpf/util.bpf.c
 +++ b/scheds/rust/scx_lavd/src/bpf/util.bpf.c
-@@ -257,17 +257,33 @@
+@@ -257,17 +257,33 @@ static bool use_full_cpus(void)
  	return (stat_cur->nr_active + LAVD_CC_NR_OVRFLW) >= nr_cpus_onln;
  }
  
@@ -60,17 +93,19 @@
  static u64 pick_any_bit(u64 bitmap, u64 nuance)
  {
 -	u64 i, pos;
-+	u64 n = nuance % 64, v;
- 
+-
 -	bpf_for(i, 0, 64) {
 -		pos = (i + nuance) % 64;
 -		if (bitmap & (1LLU << pos))
 -			return pos;
 -	}
+-
+-	return -ENOENT;
++	u64 n = nuance % 64, v;
++
 +	if (!bitmap)
 +		return -ENOENT;
- 
--	return -ENOENT;
++
 +	v = bitmap >> n;
 +	barrier_var(v);
 +	v |= bitmap << ((64 - n) & 63);
