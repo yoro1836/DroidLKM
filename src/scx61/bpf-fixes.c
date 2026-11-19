@@ -7,7 +7,14 @@
  *
  * The two such callers a scheduler is likely to reach are replaced by the
  * copies below, which make the same call without the check. main.c puts a
- * kprobe on each that moves the PC here. The map iteration helpers
+ * kprobe on each that moves the PC here.
+ *
+ * A kprobe that is hit while another kprobe's handler runs on the CPU is
+ * skipped and the original code runs. A Galaxy S24 went down that way: an
+ * interrupt in another module's kretprobe handler ran the hrtimer softirq,
+ * which fired lavd's timer through the original bpf_timer_cb(). So a timer
+ * is also given the copy as its function when bpf_timer_init() sets it up,
+ * and the kprobe is left for any timer set up before the module came. The map iteration helpers
  * (bpf_for_each_map_elem) and bpf_find_vma call callbacks the same way and
  * are not covered.
  */
@@ -15,6 +22,7 @@
 #include <linux/bpf.h>
 #include <linux/hrtimer.h>
 #include <linux/percpu.h>
+#include <linux/kprobes.h>
 #include "port.h"
 
 /* kernel/bpf/helpers.c keeps this private. android14-6.1 layout. */
@@ -91,3 +99,38 @@ __nocfi u64 scx61_bpf_loop(u64 nr_loops, u64 callback_fn, u64 callback_ctx, u64 
 
 	return i;
 }
+
+/* bpf_timer_init(timer, map, flags) set up timer->timer with bpf_timer_cb()
+ * as its function; make it the copy above. A timer is initialised once, from
+ * BPF, outside the scheduler, so this probe is cold.
+ */
+struct ds_bpf_timer_kern {
+	struct ds_bpf_hrtimer *timer;
+};
+
+static int timer_init_entry(struct kretprobe_instance *ri, struct pt_regs *regs)
+{
+	*(struct ds_bpf_timer_kern **)ri->data = (void *)regs->regs[0];
+	return 0;
+}
+
+static int timer_init_ret(struct kretprobe_instance *ri, struct pt_regs *regs)
+{
+	struct ds_bpf_timer_kern *tk = *(struct ds_bpf_timer_kern **)ri->data;
+	struct ds_bpf_hrtimer *t;
+
+	if (regs_return_value(regs))
+		return 0;
+	t = READ_ONCE(tk->timer);
+	if (t)
+		WRITE_ONCE(t->timer.function, scx61_bpf_timer_cb);
+	return 0;
+}
+
+struct kretprobe scx61_timer_init_krp = {
+	.kp.symbol_name = "bpf_timer_init",
+	.entry_handler = timer_init_entry,
+	.handler = timer_init_ret,
+	.data_size = sizeof(struct ds_bpf_timer_kern *),
+	.maxactive = 16,
+};

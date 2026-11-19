@@ -17,6 +17,7 @@
 #include <linux/utsname.h>
 #include <linux/kprobes.h>
 #include <linux/sched.h>
+#include <linux/hrtimer.h>
 #include "core.h"
 #include "hint.h"
 #include "../gki-target.h"
@@ -32,7 +33,8 @@ void scx61_task_tick(struct rq *rq, struct task_struct *curr, int queued);
 int scx61_select_task_rq(struct task_struct *p, int prev_cpu, int wake_flags);
 void scx61_update_curr(struct rq *rq);
 struct hrtimer;
-int scx61_bpf_timer_cb(struct hrtimer *hrtimer);
+enum hrtimer_restart scx61_bpf_timer_cb(struct hrtimer *hrtimer);
+extern struct kretprobe scx61_timer_init_krp;
 u64 scx61_bpf_loop(u64 nr_loops, u64 callback_fn, u64 callback_ctx, u64 flags, u64 r5);
 
 /* The idle class's methods, entered by moving the PC from a kprobe: the core
@@ -56,8 +58,11 @@ static struct scx61_hook idle_hooks[] = {
 	SCX61_REDIRECT_HOOK("update_curr_idle", scx61_update_curr, SCX61_RQ_LOCKED, true,
 			    "runtime accounting of the running task"),
 	/* see bpf-fixes.c */
+	{ .name = "bpf_timer_init", .kind = SCX61_KRETPROBE, .ctx = SCX61_BPF,
+	  .why = "a new BPF timer fires the kCFI-free copy directly, with no kprobe in the way",
+	  .krp = &scx61_timer_init_krp },
 	SCX61_REDIRECT_HOOK("bpf_timer_cb", scx61_bpf_timer_cb, SCX61_BPF, false,
-			    "BPF timers call their callback without a kCFI type word"),
+			    "BPF timers call their callback without a kCFI type word; for timers set up before us"),
 	SCX61_REDIRECT_HOOK("bpf_loop", scx61_bpf_loop, SCX61_BPF, false,
 			    "bpf_loop() calls its callback without a kCFI type word"),
 };
